@@ -33,9 +33,12 @@ public class KafkaConfig {
         factory.setConsumerFactory(consumerFactory);
 
         // Since there are only 15-20 partitions and 30-32 pods, most pods will handle 0 or 1 partition.
-        // Concurrency is set to 1 per pod. High throughput is achieved by handing off the message
+        // Concurrency is set to 1 per pod. High throughput is achieved by handing off the batch
         // to an async ThreadPoolTaskExecutor with CallerRunsPolicy.
         factory.setConcurrency(1);
+
+        // Enable batch listening explicitly for safety
+        factory.setBatchListener(true);
 
         return factory;
     }
