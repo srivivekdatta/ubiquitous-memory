@@ -23,6 +23,11 @@ dependencies {
 	implementation 'org.springframework.kafka:spring-kafka'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+	// Splunk Observability / OpenTelemetry
+	implementation 'io.micrometer:micrometer-registry-otlp'
+	implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+	implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+
 	// Apache CXF for SOAP
 	implementation 'org.apache.cxf:cxf-spring-boot-starter-jaxws:4.0.5'
 

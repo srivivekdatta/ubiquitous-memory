@@ -20,8 +20,9 @@ public class AsyncConfig {
         executor.setCorePoolSize(20);
         executor.setMaxPoolSize(20);
         // Queue capacity defines how many messages queue up before CallerRunsPolicy kicks in.
-        // A smaller queue prevents too many messages from being stuck in-memory during a pod crash.
-        executor.setQueueCapacity(50);
+        // Set to 10. Since batch size is 50, the first 20 fill threads, the next 10 fill queue,
+        // and the remaining 20 messages in the batch will trigger CallerRunsPolicy on the Kafka thread.
+        executor.setQueueCapacity(10);
         executor.setThreadNamePrefix("KafkaProcessor-");
 
         // The user explicitly requested CallerRunsPolicy. If the thread pool and queue are full,
