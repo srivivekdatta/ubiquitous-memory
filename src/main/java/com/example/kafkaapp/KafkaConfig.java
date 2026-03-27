@@ -25,27 +25,17 @@ public class KafkaConfig {
     private String groupId;
 
     @Bean
-    public ConsumerFactory<String, Object> consumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
-
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new JsonDeserializer<>(Object.class, false));
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(ConsumerFactory<String, Object> consumerFactory) {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
 
-        // For 150 TPS with 2 seconds processing time, we need at least 300 concurrent threads
-        // Option B requested: High concurrency within the Kafka Listener Container.
-        // Assuming the topic has at least 300 partitions for this to fully scale horizontally.
-        factory.setConcurrency(300);
+        // Use the autoconfigured consumer factory from application.yml
+        factory.setConsumerFactory(consumerFactory);
+
+        // Since there are only 15-20 partitions and 30-32 pods, most pods will handle 0 or 1 partition.
+        // Concurrency is set to 1 per pod. High throughput is achieved by handing off the message
+        // to an async ThreadPoolTaskExecutor with CallerRunsPolicy.
+        factory.setConcurrency(1);
 
         return factory;
     }

@@ -6,23 +6,29 @@ import org.springframework.stereotype.Service;
 public class SoapClientService {
 
     /**
-     * Simulates a SOAP API call that takes 1 to 2 seconds.
-     * In a real application, you would inject the generated CXF client Port type here
-     * and invoke the web service method.
+     * Simulates an Actimize SOAP API call that takes 1 to 2 seconds.
+     * With CXF connection/request timeouts configured at 2.5 seconds, this simulates
+     * both success and occasional timeout failures.
      */
     public String callExternalSystem(String payload) throws Exception {
-        // Raw info demonstration: simulate 1.5 seconds latency
+        // Raw info demonstration: simulate typical 1-2 seconds latency
+        long latency = (long) (1000 + Math.random() * 1000);
+
+        // Randomly simulate a timeout scenario where latency exceeds the 2.5s CXF limit
+        if (Math.random() < 0.05) { // 5% chance of timeout
+            latency = 3000;
+        }
+
         try {
-            Thread.sleep((long) (1000 + Math.random() * 1000));
+            Thread.sleep(latency);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
-        // Randomly simulate success or failure (e.g. 10% failure rate)
-        if (Math.random() < 0.1) {
-            throw new RuntimeException("SOAP Web Service call failed: Connection Timeout");
+        if (latency >= 2500) {
+            throw new RuntimeException("Actimize SOAP Web Service call failed: Read timed out");
         }
 
-        return "SUCCESS_RESPONSE_" + System.currentTimeMillis();
+        return "ACTIMIZE_FRAUD_CHECK_SUCCESS_" + System.currentTimeMillis();
     }
 }
