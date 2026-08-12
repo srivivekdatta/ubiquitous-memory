@@ -31,6 +31,9 @@ dependencies {
 	// Apache CXF for SOAP
 	implementation 'org.apache.cxf:cxf-spring-boot-starter-jaxws:4.0.5'
 
+	// JSON processing
+	implementation 'com.google.code.gson:gson'
+
 	// Oracle Database Driver
 	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 

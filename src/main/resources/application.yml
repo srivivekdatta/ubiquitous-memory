@@ -20,11 +20,10 @@ spring:
       group-id: high-throughput-group
       auto-offset-reset: earliest
       max-poll-records: 50
-      # Use JSON deserializer for messages
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      # Use String deserializer for messages
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       properties:
-        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
-        spring.json.trusted.packages: "*"
+        max.poll.interval.ms: 300000
     listener:
       type: BATCH
       # The container will manage acknowledgments after the batch listener method returns.

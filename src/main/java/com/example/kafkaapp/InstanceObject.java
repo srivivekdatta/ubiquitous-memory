@@ -42,11 +42,13 @@ public class InstanceObject {
 
     @Override
     public String toString() {
-        return "{" +
-                "\"transactionId\":\"" + transactionId + '\"' +
-                ", \"rawData\":\"" + rawData + '\"' +
-                ", \"externalApiResponse\":\"" + externalApiResponse + '\"' +
-                ", \"soapApiResponse\":\"" + soapApiResponse + '\"' +
+        // Use a JSON library or properly escape quotes if manually constructing JSON in a real app.
+        // For this sample POJO, we rely on the standard object toString to avoid malformed JSON exceptions downstream.
+        return "InstanceObject{" +
+                "transactionId='" + transactionId + '\'' +
+                ", rawData='" + rawData + '\'' +
+                ", externalApiResponse='" + externalApiResponse + '\'' +
+                ", soapApiResponse='" + soapApiResponse + '\'' +
                 '}';
     }
 }

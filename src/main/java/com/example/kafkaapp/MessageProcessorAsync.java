@@ -2,11 +2,12 @@ package com.example.kafkaapp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -20,6 +21,7 @@ public class MessageProcessorAsync {
     private final SoapClientService soapClientService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Executor soapApiExecutor;
+    private final Gson gson = new Gson();
 
     public MessageProcessorAsync(
             DatabaseService databaseService,
@@ -35,29 +37,33 @@ public class MessageProcessorAsync {
     }
 
     @Async("messageProcessingExecutor")
-    public CompletableFuture<Void> processMessage(String transactionId, Map<String, Object> messagePayload) {
+    public CompletableFuture<Void> processMessage(String transactionId, String rawMessagePayload) {
         log.info("Processing message in Async Thread. TxId: {}", transactionId);
-        String payloadJson = messagePayload.toString();
 
         try {
+            // Ensure payload is valid JSON (this will throw if it's completely malformed)
+            JsonObject jsonObject = gson.fromJson(rawMessagePayload, JsonObject.class);
+            // Optionally, you can extract the transactionId from the JSON here if it exists,
+            // e.g. transactionId = jsonObject.has("txId") ? jsonObject.get("txId").getAsString() : transactionId;
+
             // 1. Async insert raw data into db
-            databaseService.insertInitialState(transactionId, payloadJson);
+            databaseService.insertInitialState(transactionId, rawMessagePayload);
 
             // 2. Populate an instanceobject
             InstanceObject instance = new InstanceObject();
             instance.setTransactionId(transactionId);
-            instance.setRawData(payloadJson);
+            instance.setRawData(rawMessagePayload);
 
             // 3. Call external api
             log.info("Calling external API for TxId: {}", transactionId);
-            String restResponse = restApiClientService.callExternalApi(payloadJson);
+            String restResponse = restApiClientService.callExternalApi(rawMessagePayload);
 
             // 4. Set this data to this instanceobject
             instance.setExternalApiResponse(restResponse);
 
             // 5. Finally call soap api (async on separate thread pool)
             log.info("Submitting SOAP call for TxId: {} to soapApiExecutor", transactionId);
-            CompletableFuture.supplyAsync(() -> soapClientService.callExternalSystem(instance.toString()), soapApiExecutor)
+            return CompletableFuture.supplyAsync(() -> soapClientService.callExternalSystem(instance.toString()), soapApiExecutor)
                 .thenAccept(soapResponse -> {
                     log.info("SOAP call returned for TxId: {}", transactionId);
                     instance.setSoapApiResponse(soapResponse);
@@ -77,9 +83,7 @@ public class MessageProcessorAsync {
         } catch (Exception e) {
             log.error("Initial processing failed for TxId: {}, Exception: {}", transactionId, e.getMessage());
             databaseService.markAsFailed(transactionId, e.getMessage());
+            return CompletableFuture.completedFuture(null);
         }
-
-        // Return immediately so the initial processing thread pool is freed up while the SOAP call happens async
-        return CompletableFuture.completedFuture(null);
     }
 }
