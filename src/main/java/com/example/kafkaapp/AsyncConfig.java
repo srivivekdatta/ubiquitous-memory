@@ -31,4 +31,19 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name = "soapApiExecutor")
+    public Executor soapApiExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        // Separate pool for the async SOAP API calls to prevent blocking the initial processing threads.
+        // Sized identically to the main pool to ensure a 1:1 throughput capability.
+        executor.setCorePoolSize(60);
+        executor.setMaxPoolSize(60);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("SoapExecutor-");
+
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
 }
