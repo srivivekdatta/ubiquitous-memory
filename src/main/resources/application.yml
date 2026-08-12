@@ -11,7 +11,7 @@ spring:
     password: ${DB_PASSWORD:password}
     driver-class-name: oracle.jdbc.OracleDriver
     hikari:
-      maximum-pool-size: 20
+      maximum-pool-size: 70
       minimum-idle: 5
 
   kafka:
