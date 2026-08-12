@@ -19,7 +19,7 @@ spring:
     consumer:
       group-id: high-throughput-group
       auto-offset-reset: earliest
-      max-poll-records: 50
+      max-poll-records: 20
       # Use String deserializer for messages
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       properties:
