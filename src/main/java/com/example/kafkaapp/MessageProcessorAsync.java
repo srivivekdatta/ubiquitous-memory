@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class MessageProcessorAsync {
@@ -26,7 +27,7 @@ public class MessageProcessorAsync {
      * of Kafka partitions, while adhering strictly to the maximum Hikari DB connection pool size.
      */
     @Async("messageProcessingExecutor")
-    public void processMessage(String transactionId, Map<String, Object> messagePayload) {
+    public CompletableFuture<Void> processMessage(String transactionId, Map<String, Object> messagePayload) {
         log.info("Processing message in Async Thread. TxId: {}", transactionId);
 
         try {
@@ -48,6 +49,12 @@ public class MessageProcessorAsync {
 
             // 4. On failure, set the F flag in DB
             databaseService.markAsFailed(transactionId, e.getMessage());
+
+            // Depending on strictness of the batch, you can either rethrow here so the whole batch
+            // fails and gets retried, or swallow it and return normally since we marked it 'F' in DB.
+            // We'll swallow it to allow the rest of the batch to complete successfully.
         }
+
+        return CompletableFuture.completedFuture(null);
     }
 }
