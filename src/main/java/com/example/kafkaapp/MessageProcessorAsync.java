@@ -36,9 +36,13 @@ public class MessageProcessorAsync {
         this.soapApiExecutor = soapApiExecutor;
     }
 
-    @Async("messageProcessingExecutor")
+    // We intentionally removed @Async here because returning a CompletableFuture from an @Async
+    // method causes Spring to implicitly wait/block the caller thread on the returned future,
+    // destroying the separate thread pool separation.
+    // Instead, the first part runs on whatever thread calls it (Kafka thread or primary pool),
+    // and the SOAP call is explicitly handed off to the soapApiExecutor.
     public CompletableFuture<Void> processMessage(String transactionId, String rawMessagePayload) {
-        log.info("Processing message in Async Thread. TxId: {}", transactionId);
+        log.info("Processing message for TxId: {}", transactionId);
 
         try {
             // Ensure payload is valid JSON (this will throw if it's completely malformed)
@@ -63,7 +67,13 @@ public class MessageProcessorAsync {
 
             // 5. Finally call soap api (async on separate thread pool)
             log.info("Submitting SOAP call for TxId: {} to soapApiExecutor", transactionId);
-            return CompletableFuture.supplyAsync(() -> soapClientService.callExternalSystem(instance.toString()), soapApiExecutor)
+            return CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return soapClientService.callExternalSystem(instance.toString());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }, soapApiExecutor)
                 .thenAccept(soapResponse -> {
                     log.info("SOAP call returned for TxId: {}", transactionId);
                     instance.setSoapApiResponse(soapResponse);

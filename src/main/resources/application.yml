@@ -64,3 +64,7 @@ cxf:
   client:
     connection-timeout: 2500
     receive-timeout: 2500
+
+# Properties mapped in CxfClientConfig to enforce timeouts for Apache CXF
+cxf.client.connection-timeout: 2500
+cxf.client.receive-timeout: 2500
