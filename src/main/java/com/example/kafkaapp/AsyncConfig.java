@@ -15,14 +15,13 @@ public class AsyncConfig {
     @Bean(name = "messageProcessingExecutor")
     public Executor messageProcessingExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        // Base thread pool size. With 30 pods, each needs ~10 threads to handle 300 total concurrent processes.
-        // We set it to 20 to fully utilize the DB connection pool (max 20) in extreme load scenarios.
-        executor.setCorePoolSize(20);
-        executor.setMaxPoolSize(20);
+        // Thread pool sized to guarantee immediate processing of a full Kafka batch (max.poll.records=50)
+        // Set to 60 to provide headroom and align with Hikari DB max-pool-size of 70.
+        executor.setCorePoolSize(60);
+        executor.setMaxPoolSize(60);
         // Queue capacity defines how many messages queue up before CallerRunsPolicy kicks in.
-        // Set to 10. Since batch size is 50, the first 20 fill threads, the next 10 fill queue,
-        // and the remaining 20 messages in the batch will trigger CallerRunsPolicy on the Kafka thread.
-        executor.setQueueCapacity(10);
+        // Set to 50 to accommodate batch sizes comfortably.
+        executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("KafkaProcessor-");
 
         // The user explicitly requested CallerRunsPolicy. If the thread pool and queue are full,
